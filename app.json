@@ -1,0 +1,15 @@
+{
+  "package_id": "com.yuzuru.g2keep",
+  "edition": "202601",
+  "name": "Keep for G2",
+  "version": "1.1.0",
+  "min_sdk_version": "0.0.14",
+  "entrypoint": "index.html",
+  "permissions": [
+    {
+      "name": "network",
+      "desc": "Google Keepとのメモ同期およびローカル連携サーバーとの通信"
+    }
+  ],
+  "supported_languages": ["ja", "en"]
+}

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  even-g2-keep:
+    build: .
+    container_name: even-g2-keep
+    restart: unless-stopped
+    ports:
+      - "8000:10000"
+    environment:
+      - GOOGLE_EMAIL=your-email@gmail.com
+      - GOOGLE_MASTER_TOKEN=aas_et/...
+      - APP_SECRET=your-secret-password
+      - PORT=10000

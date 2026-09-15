@@ -1,0 +1,9 @@
+node_modules
+.git
+.gitignore
+*.env
+backend/.env
+backend/token.json
+token.json
+even-g2-keep.ehpk
+dist

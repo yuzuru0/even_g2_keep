@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+
+# Sensitive environment files & tokens (絶対にコミットしない)
+.env
+*.env
+backend/.env
+backend/token.json
+token.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
