@@ -419,8 +419,9 @@ def startup_event():
     keep_manager.init_keep()
 
 @app.get("/healthz")
+@app.get("/health")
 def healthz():
-    """Render/UptimeRobot用ヘルスチェックエンドポイント (認証不要)"""
+    """Render/UptimeRobot/cron-job.org用ヘルスチェックエンドポイント (認証不要)"""
     return {"status": "ok", "time": datetime.now().isoformat()}
 
 @app.get("/api/auth-info")

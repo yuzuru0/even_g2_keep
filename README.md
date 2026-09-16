@@ -64,6 +64,18 @@ Render.com provides a free, cloud-hosted environment with an automatic HTTPS dom
 * **Zero Cost**: Render's free tier provides 750 free instance hours per month. Running this single web service runs 24/7 (744 hours in a 31-day month), **completely within the free tier with zero charges**.
 * **1-Click Setup**: Click the button above, enter your environment variables, and your server is live in minutes.
 
+#### 💡 Preventing Render Free-Tier Inactivity Sleep (Spin-Down)
+* **The Inactivity Spin-down**: Render's free tier automatically spins down (hibernates) web services after **15 minutes of inactivity**. When a new request arrives, a cold start takes approximately **50–60 seconds** to wake the server.  
+  *(Note: The Keep for G2 client app displays your cached notes instantly on your glasses, so the screen never stays blank, but syncing fresh notes will wait for the server to spin up).*
+* **How to Keep It Awake 24/7 (100% Free & Recommended)**:  
+  You can use a free monitoring / cron service like **[cron-job.org](https://cron-job.org/)** or **[UptimeRobot](https://uptimerobot.com/)** to send a periodic ping to your server every **10–14 minutes**:
+  1. Create a free account on [cron-job.org](https://cron-job.org/) or [UptimeRobot](https://uptimerobot.com/).
+  2. Add a new monitor / cron job:
+     * **URL**: `https://<your-render-app>.onrender.com/health`
+     * **Execution Interval**: Every `10 minutes` (or `14 minutes`)
+  3. **Instance Hours**: Render grants **750 free instance hours per month**. Since a 31-day month has 744 hours (31 × 24), running this single web service 24/7 stays **100% within the free tier with zero extra cost**.  
+  *(Tip: To conserve hours, set cron-job.org to ping only during your active daytime hours, e.g. 07:00 – 23:00).*
+
 ### Option B: Self-Host on Your Own Server (Docker / VPS / Home Server / Raspberry Pi)
 You can easily self-host using the included Docker configurations:
 
@@ -242,6 +254,20 @@ Render.com を利用すれば、無料かつ数分で自動 HTTPS 付きのサ�
 
 * **単一アプリなら完全無料**: Render の無料枠では毎月 750 時間の無料インスタンス枠が提供されます。本中継サーバー 1 つだけであれば、24時間365日常時稼働（31日で744時間）させても**無料枠の範囲内にピッタリ収まり、料金は一切発生しません**。
 * **ワンクリック導入**: 上のボタンをクリックして環境変数を入力するだけで自動ビルド・デプロイされます。
+
+#### 💡 Render 無料プランの休止（スリープ）対策について
+* **無料枠の休止仕様（スピンダウン）**:  
+  Render.com の無料枠（Free Web Service）は、アクセスが **15分間途絶えると自動的にサーバーが休止状態（スピンダウン）** に入ります。休止中にアクセスがあると自動復帰（コールドスタート）しますが、初回応答までに **約50秒〜1分** の待ち時間が発生します。  
+  *(※ Keep for G2 アプリは前回同期したメモを端末内にキャッシュして即時表示するため画面が真っ白になることはありませんが、最新メモの再同期に少し時間がかかります)*
+
+* **完全無料で 24時間常時起動（スリープ防止）にする方法**:  
+  無料の外部死活監視 / 定期アクセスサービス（**[cron-job.org](https://cron-job.org/)** または **[UptimeRobot](https://uptimerobot.com/)**）を使い、**10分〜14分間隔で定期的に Ping（アクセス）** を送ることで、サーバーの休止を簡単に防ぐことができます：
+  1. **[cron-job.org](https://cron-job.org/)**（完全無料・日本語対応）または **[UptimeRobot](https://uptimerobot.com/)** に無料登録します。
+  2. 新しいジョブ（Monitor）を作成し、以下を設定します：
+     * **URL**: `https://<あなたのRenderサーバーURL>/health`
+     * **実行間隔**: `10分ごと`（または `14分ごと`）
+  3. **無料枠への影響**: Render の無料枠は毎月 **750時間** 提供されます。31日間の月でも合計744時間（31日 × 24時間）のため、この中継サーバー1台だけであれば、**24時間365日常時起動させ続けても 750時間の無料枠内に完全に収まり、料金は一切発生しません**。  
+  *(※ より無料枠を節約したい場合は、cron-job.org で活動時間帯である「朝7時〜夜23時」の間だけ実行するようにスケジュール設定するのもおすすめです)*
 
 ### パターン B: 自前サーバーでの導入（Docker / 自宅PC / Raspberry Pi / VPS / NAS）
 同梱の Docker 設定を使って、お手持ちの環境で自前運用できます：
