@@ -96,6 +96,60 @@ class EvenBridgeService {
     return this.deviceInfo;
   }
 
+  /**
+   * Even Appのネイティブ永続ストレージに保存 (WebView再起動やグラス再接続でも確実に保持)
+   */
+  async setStorage(key: string, value: string): Promise<boolean> {
+    // 1. ブラウザのlocalStorageに即座にフォールバック保存
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn("[EvenBridge] localStorage.setItem failed:", e);
+    }
+
+    // 2. Even App Native Bridgeの永続ストレージに保存
+    if (this.bridge) {
+      try {
+        const ok = await this.bridge.setLocalStorage(key, value);
+        console.log(`[EvenBridge] bridge.setLocalStorage("${key}") result:`, ok);
+        return Boolean(ok);
+      } catch (err) {
+        console.warn(`[EvenBridge] bridge.setLocalStorage("${key}") failed:`, err);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Even Appのネイティブ永続ストレージから取得
+   */
+  async getStorage(key: string): Promise<string | null> {
+    // 1. Even App Native Bridgeから優先取得
+    if (this.bridge) {
+      try {
+        const val = await this.bridge.getLocalStorage(key);
+        if (val !== undefined && val !== null && val !== "") {
+          console.log(`[EvenBridge] bridge.getLocalStorage("${key}") loaded (${val.length} chars)`);
+          return val;
+        }
+      } catch (err) {
+        console.warn(`[EvenBridge] bridge.getLocalStorage("${key}") failed:`, err);
+      }
+    }
+
+    // 2. フォールバック: ブラウザのlocalStorage
+    try {
+      const localVal = localStorage.getItem(key);
+      if (localVal !== null && localVal !== "") {
+        return localVal;
+      }
+    } catch (e) {
+      console.warn("[EvenBridge] localStorage.getItem failed:", e);
+    }
+
+    return null;
+  }
+
   addListener(listener: GlassEventListener): () => void {
     this.eventListeners.push(listener);
     return () => {

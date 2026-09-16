@@ -22,9 +22,12 @@ class App {
     console.log("[App] Starting Keep on G2 App...");
     this.renderQRCode();
     this.setupUIEvents();
-    this.loadSettings();
 
-    // 1. キャッシュされたメモで即座に初期化・プレビュー表示
+    // 1. 同期的にlocalStorageおよびURLパラメータから初期設定を読み込み（高速描画）
+    this.loadSettingsFromLocalStorage();
+    this.checkUrlParams();
+
+    // キャッシュされたメモで即座に初期化・プレビュー表示
     this.currentNotes = this.keepClient.getCachedNotes();
     this.renderer.setNotes(this.currentNotes);
     this.renderNotesList();
@@ -43,10 +46,15 @@ class App {
       this.handleGlassEvent(event);
     });
 
-    // 4. グラス画面を即座に描画（ロード画面を解除）
+    // 4. Even App ネイティブ永続ストレージから保存済み設定を復元！
+    if (bridgeReady) {
+      await this.loadSettingsFromBridge();
+    }
+
+    // 5. グラス画面を即座に描画（ロード画面を解除）
     await this.renderer.render();
 
-    // 5. バックグラウンドで最新メモを同期
+    // 6. バックグラウンドで最新メモを同期
     this.syncNotes(false);
   }
 
@@ -71,6 +79,16 @@ class App {
 
     this.currentNotes = result.notes;
     this.renderer.setNotes(this.currentNotes);
+
+    // 成功時はネイティブストレージにもメモキャッシュを保存（オフライン起動や次回即座表示用）
+    if (result.success && result.notes.length > 0 && !result.isDemo) {
+      try {
+        const notesStr = JSON.stringify(result.notes);
+        if (notesStr.length < 65536) {
+          await evenBridge.setStorage("even_g2_keep_notes", notesStr);
+        }
+      } catch {}
+    }
 
     // グラスに描画
     await this.renderer.render();
@@ -599,11 +617,7 @@ class App {
     document.getElementById("btn-open-settings")?.addEventListener("click", () => {
       if (settingsModal) settingsModal.classList.add("open");
     });
-    document.getElementById("btn-close-settings")?.addEventListener("click", () => {
-      if (settingsModal) settingsModal.classList.remove("open");
-    });
-
-    document.getElementById("btn-save-settings")?.addEventListener("click", async () => {
+    const getModalSettings = () => {
       const backendInput = document.getElementById("setting-backend-url") as HTMLInputElement;
       const apiKeyInput = document.getElementById("setting-api-key") as HTMLInputElement;
       const syncIntervalSelect = document.getElementById("setting-sync-interval") as HTMLSelectElement;
@@ -620,19 +634,34 @@ class App {
       const includeArchived = includeArchivedCheckbox?.checked || false;
       const useDemo = useDemoCheckbox?.checked || false;
 
-      this.keepClient.setBackendUrl(backendUrl);
-      this.keepClient.setApiKey(apiKey);
-      this.keepClient.setUseDemo(useDemo);
-      this.keepClient.setSortBy(sortBy);
-      this.keepClient.setIncludeArchived(includeArchived);
-      this.renderer.setBrightness(brightness);
+      return { backendUrl, apiKey, intervalSec, brightness, sortBy, includeArchived, useDemo };
+    };
 
-      this.saveSettings(backendUrl, intervalSec, brightness, useDemo, sortBy, includeArchived, apiKey);
-      this.setupSyncTimer(intervalSec);
+    document.getElementById("btn-close-settings")?.addEventListener("click", async () => {
+      if (settingsModal) settingsModal.classList.remove("open");
+      // モーダルを閉じる際にも自動保存
+      const s = getModalSettings();
+      this.keepClient.setBackendUrl(s.backendUrl);
+      this.keepClient.setApiKey(s.apiKey);
+      await this.saveSettings(s.backendUrl, s.intervalSec, s.brightness, s.useDemo, s.sortBy, s.includeArchived, s.apiKey);
+    });
+
+    document.getElementById("btn-save-settings")?.addEventListener("click", async () => {
+      const s = getModalSettings();
+
+      this.keepClient.setBackendUrl(s.backendUrl);
+      this.keepClient.setApiKey(s.apiKey);
+      this.keepClient.setUseDemo(s.useDemo);
+      this.keepClient.setSortBy(s.sortBy);
+      this.keepClient.setIncludeArchived(s.includeArchived);
+      this.renderer.setBrightness(s.brightness);
+
+      await this.saveSettings(s.backendUrl, s.intervalSec, s.brightness, s.useDemo, s.sortBy, s.includeArchived, s.apiKey);
+      this.setupSyncTimer(s.intervalSec);
 
       await this.renderer.render();
       if (settingsModal) settingsModal.classList.remove("open");
-      this.showToast("設定を保存しました");
+      this.showToast("設定を保存しました（Even Appに記憶）");
       await this.syncNotes(true);
     });
 
@@ -660,65 +689,149 @@ class App {
     }
   }
 
-  private loadSettings() {
+  /**
+   * 設定オブジェクトをUIおよび各サービスへ反映
+   */
+  private applyConfig(config: any) {
+    if (!config) return;
+    if (config.backendUrl) {
+      this.keepClient.setBackendUrl(config.backendUrl);
+      const el = document.getElementById("setting-backend-url") as HTMLInputElement;
+      if (el) el.value = config.backendUrl;
+    }
+    if (config.apiKey !== undefined) {
+      this.keepClient.setApiKey(config.apiKey);
+      const el = document.getElementById("setting-api-key") as HTMLInputElement;
+      if (el) el.value = config.apiKey;
+    }
+    if (config.brightness) {
+      this.renderer.setBrightness(config.brightness);
+      const el = document.getElementById("setting-brightness") as HTMLSelectElement;
+      if (el) el.value = String(config.brightness);
+    }
+    if (config.useDemo !== undefined) {
+      this.keepClient.setUseDemo(config.useDemo);
+      const el = document.getElementById("setting-use-demo") as HTMLInputElement;
+      if (el) el.checked = config.useDemo;
+    }
+    if (config.sortBy) {
+      this.keepClient.setSortBy(config.sortBy);
+      const el = document.getElementById("setting-sort-by") as HTMLSelectElement;
+      if (el) el.value = config.sortBy;
+    }
+    if (config.includeArchived !== undefined) {
+      this.keepClient.setIncludeArchived(config.includeArchived);
+      const el = document.getElementById("setting-include-archived") as HTMLInputElement;
+      if (el) el.checked = config.includeArchived;
+    }
+    if (config.intervalSec !== undefined) {
+      const el = document.getElementById("setting-sync-interval") as HTMLSelectElement;
+      if (el) el.value = String(config.intervalSec);
+      this.setupSyncTimer(config.intervalSec);
+    }
+
+    this.renderer.setIncludeArchived(this.keepClient.getIncludeArchived());
+    const quickBtn = document.getElementById("btn-quick-toggle-archive");
+    if (quickBtn) {
+      const isArch = this.keepClient.getIncludeArchived();
+      quickBtn.textContent = isArch ? "📁 アーカイブ: ON" : "📁 アーカイブ: OFF";
+      quickBtn.style.color = isArch ? "var(--accent-green)" : "";
+    }
+  }
+
+  /**
+   * ブラウザlocalStorageから同期的に読み込み（初回初期表示用）
+   */
+  private loadSettingsFromLocalStorage() {
     try {
       const saved = localStorage.getItem("even_g2_keep_config");
       if (saved) {
-        const config = JSON.parse(saved);
-        if (config.backendUrl) {
-          this.keepClient.setBackendUrl(config.backendUrl);
-          const el = document.getElementById("setting-backend-url") as HTMLInputElement;
-          if (el) el.value = config.backendUrl;
-        }
-        if (config.apiKey !== undefined) {
-          this.keepClient.setApiKey(config.apiKey);
-          const el = document.getElementById("setting-api-key") as HTMLInputElement;
-          if (el) el.value = config.apiKey;
-        }
-        if (config.brightness) {
-          this.renderer.setBrightness(config.brightness);
-          const el = document.getElementById("setting-brightness") as HTMLSelectElement;
-          if (el) el.value = String(config.brightness);
-        }
-        if (config.useDemo !== undefined) {
-          this.keepClient.setUseDemo(config.useDemo);
-          const el = document.getElementById("setting-use-demo") as HTMLInputElement;
-          if (el) el.checked = config.useDemo;
-        }
-        if (config.sortBy) {
-          this.keepClient.setSortBy(config.sortBy);
-          const el = document.getElementById("setting-sort-by") as HTMLSelectElement;
-          if (el) el.value = config.sortBy;
-        }
-        if (config.includeArchived !== undefined) {
-          this.keepClient.setIncludeArchived(config.includeArchived);
-          const el = document.getElementById("setting-include-archived") as HTMLInputElement;
-          if (el) el.checked = config.includeArchived;
-        }
-        if (config.intervalSec !== undefined) {
-          const el = document.getElementById("setting-sync-interval") as HTMLSelectElement;
-          if (el) el.value = String(config.intervalSec);
-          this.setupSyncTimer(config.intervalSec);
-        }
+        this.applyConfig(JSON.parse(saved));
       }
       const el = document.getElementById("setting-backend-url") as HTMLInputElement;
       if (el && !el.value) {
         el.value = this.keepClient.getBackendUrl();
-      }
-
-      this.renderer.setIncludeArchived(this.keepClient.getIncludeArchived());
-      const quickBtn = document.getElementById("btn-quick-toggle-archive");
-      if (quickBtn) {
-        const isArch = this.keepClient.getIncludeArchived();
-        quickBtn.textContent = isArch ? "📁 アーカイブ: ON" : "📁 アーカイブ: OFF";
-        quickBtn.style.color = isArch ? "var(--accent-green)" : "";
       }
     } catch {
       // ignore
     }
   }
 
-  private saveSettings(
+  /**
+   * URLクエリパラメータ(?backend=...&key=...)がある場合は優先反映＆永続保存
+   */
+  private checkUrlParams() {
+    try {
+      if (typeof window === "undefined" || !window.location.search) return;
+      const params = new URLSearchParams(window.location.search);
+      const url = params.get("backend") || params.get("server") || params.get("url");
+      const key = params.get("key") || params.get("api_key") || params.get("secret");
+      let changed = false;
+
+      if (url && url.trim()) {
+        this.keepClient.setBackendUrl(url.trim());
+        const el = document.getElementById("setting-backend-url") as HTMLInputElement;
+        if (el) el.value = url.trim();
+        changed = true;
+      }
+      if (key && key.trim()) {
+        this.keepClient.setApiKey(key.trim());
+        const el = document.getElementById("setting-api-key") as HTMLInputElement;
+        if (el) el.value = key.trim();
+        changed = true;
+      }
+      if (changed) {
+        this.saveSettings(
+          this.keepClient.getBackendUrl(),
+          0,
+          this.renderer.getBrightness(),
+          this.keepClient.getUseDemo(),
+          this.keepClient.getSortBy(),
+          this.keepClient.getIncludeArchived(),
+          this.keepClient.getApiKey()
+        );
+      }
+    } catch (e) {
+      console.warn("[App] Error checking URL params:", e);
+    }
+  }
+
+  /**
+   * Even App Native Bridgeの永続ストレージから設定を復元
+   * （WebView再起動やアプリ再起動でもEven App側で永久に保持される）
+   */
+  private async loadSettingsFromBridge() {
+    try {
+      const saved = await evenBridge.getStorage("even_g2_keep_config");
+      if (saved) {
+        console.log("[App] Settings restored from Even App Bridge storage:", saved);
+        const config = JSON.parse(saved);
+        this.applyConfig(config);
+      }
+
+      // ネイティブ側に保存されたメモキャッシュがあれば復元
+      const savedNotes = await evenBridge.getStorage("even_g2_keep_notes");
+      if (savedNotes) {
+        try {
+          const notes = JSON.parse(savedNotes);
+          if (Array.isArray(notes) && notes.length > 0) {
+            this.keepClient.setCachedNotes(notes);
+            this.currentNotes = this.keepClient.getCachedNotes();
+            this.renderer.setNotes(this.currentNotes);
+            this.renderNotesList();
+            this.updatePreviewUI();
+          }
+        } catch {}
+      }
+    } catch (err) {
+      console.warn("[App] Error loading settings from bridge:", err);
+    }
+  }
+
+  /**
+   * 設定をブラウザlocalStorageとEven App Native永続ストレージの両方に保存
+   */
+  private async saveSettings(
     backendUrl: string,
     intervalSec: number,
     brightness: number,
@@ -727,13 +840,16 @@ class App {
     includeArchived: boolean = false,
     apiKey: string = ""
   ) {
+    const config = { backendUrl, intervalSec, brightness, useDemo, sortBy, includeArchived, apiKey };
+    const jsonStr = JSON.stringify(config);
     try {
-      localStorage.setItem(
-        "even_g2_keep_config",
-        JSON.stringify({ backendUrl, intervalSec, brightness, useDemo, sortBy, includeArchived, apiKey })
-      );
-    } catch {
-      // ignore
+      localStorage.setItem("even_g2_keep_config", jsonStr);
+    } catch {}
+    try {
+      await evenBridge.setStorage("even_g2_keep_config", jsonStr);
+      console.log("[App] Settings successfully persisted to Even App storage");
+    } catch (e) {
+      console.warn("[App] Failed to persist settings to evenBridge:", e);
     }
   }
 

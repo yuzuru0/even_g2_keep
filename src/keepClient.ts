@@ -91,6 +91,9 @@ export class KeepClient {
 
   setBackendUrl(url: string) {
     let cleanUrl = (url || "").trim();
+    if (cleanUrl && !cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
+      cleanUrl = "https://" + cleanUrl;
+    }
     try {
       if (cleanUrl.includes("?") || cleanUrl.includes("#")) {
         const parsed = new URL(cleanUrl.startsWith("http") ? cleanUrl : `http://${cleanUrl}`);
@@ -136,6 +139,11 @@ export class KeepClient {
 
   getCachedNotes(): KeepNote[] {
     return this.filterAndSort(this.cachedNotes);
+  }
+
+  setCachedNotes(notes: KeepNote[]) {
+    this.cachedNotes = notes;
+    this.saveLocalCache(notes);
   }
 
   private filterAndSort(notes: KeepNote[]): KeepNote[] {
