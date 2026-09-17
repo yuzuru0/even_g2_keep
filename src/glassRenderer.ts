@@ -130,7 +130,7 @@ export class GlassRenderer {
     // 2. メインリスト (ID: 2)
     let bodyText = "";
     if (total === 0) {
-      bodyText = "メモがありません。\nスマホから同期または新規追加してください。";
+      bodyText = "メモがありません。\n長押しまたはタップで今すぐ同期";
     } else {
       // 現在の選択アイテムを中心に最大5件表示
       const visibleCount = 4;
@@ -188,7 +188,7 @@ export class GlassRenderer {
     );
 
     // 3. フッター案内 (ID: 3)
-    const footerText = "Tap: 詳細 | 長押し: アーカイブ切替 | 2Tap: 同期";
+    const footerText = "Tap: 詳細 | 長押し: 同期 | 2Tap: 終了";
     containers.push(
       new TextContainerProperty({
         containerID: 3,

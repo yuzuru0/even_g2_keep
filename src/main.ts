@@ -243,7 +243,7 @@ class App {
         }, 320);
       }
     }
-    // 5. 長押し (詳細モードなら一覧に戻る / 一覧モードならアーカイブ表示切替)
+    // 5. 長押し (詳細モードなら一覧に戻る / 一覧モードならGoogle Keepと再同期)
     else if (isLongPress) {
       if (this.singleTapTimer !== null) {
         clearTimeout(this.singleTapTimer);
@@ -256,8 +256,10 @@ class App {
         this.updatePreviewUI();
         this.renderNotesList();
       } else {
-        // 一覧モードでの長押し: アーカイブ表示切替
-        await this.toggleArchiveMode();
+        // 一覧モードでの長押し: Google Keepと再同期
+        console.log("[App] Long press on homepage -> syncing with Google Keep");
+        this.showToast("🔄 Google Keepと同期中...");
+        await this.syncNotes(true);
       }
     }
   }
@@ -305,6 +307,12 @@ class App {
   private async handleSingleTap() {
     console.log("[App] Executing single tap action");
     if (this.renderer.getMode() === "list") {
+      if (this.currentNotes.length === 0) {
+        console.log("[App] Tap with 0 notes -> triggering sync");
+        this.showToast("🔄 Google Keepと同期中...");
+        await this.syncNotes(true);
+        return;
+      }
       this.renderer.setMode("detail");
       this.showToast("● 詳細を開きました");
     } else {
@@ -580,7 +588,8 @@ class App {
         this.updatePreviewUI();
         this.renderNotesList();
       } else {
-        await this.toggleArchiveMode();
+        this.showToast("🔄 Google Keepと同期中...");
+        await this.syncNotes(true);
       }
     });
 

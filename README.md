@@ -187,10 +187,10 @@ If you are running the server on your own server or home PC using `docker-compos
 ### 1. In-App Touch Gestures
 | Gesture | Action |
 | :--- | :--- |
-| **Single Tap** | Open note detail / Toggle checklist item (checked / unchecked) |
+| **Single Tap** | Open note detail / Toggle checklist item (or tap to sync when empty) |
 | **Swipe Down / Up** | Scroll page down / up (or select next / previous note) |
 | **Double Tap** | Return to note list (from detail) / **Show exit confirmation dialog** (from home list) |
-| **Long Press** | Toggle Archive filter / Return to list view |
+| **Long Press** | **Sync with Google Keep** (from home list) / Return to list view (from detail) |
 
 ### 2. How to Exit the App (On G2 Smart Glasses)
 * **Method 1 (Standard): Double-tap on the home note list screen.** This brings up the native system exit confirmation dialog (`"End this feature?"`). Select confirm to safely close the app.
@@ -380,10 +380,10 @@ Render.com では、**デプロイ時のフォーム** または **デプロイ�
 ### 1. グラス操作（タッチパッド）
 | 操作 | 動作 |
 | :--- | :--- |
-| **1回タップ (Single Tap)** | メモの詳細を開く / チェックボックスのオン・オフ切替 |
+| **1回タップ (Single Tap)** | メモの詳細を開く / チェックボックスの切替 (メモ0件時はタップで同期) |
 | **スワイプ 上/下 (Swipe)** | ページ送り・スクロール (または次/前のメモを選択) |
 | **2回タップ (Double Tap)** | メモ詳細から一覧に戻る / **ホーム一覧画面でアプリ終了確認ダイアログを表示** |
-| **長押し (Long Press)** | アーカイブ表示の切替 / メモ詳細から一覧画面に戻る |
+| **長押し (Long Press)** | **Google Keep と今すぐ再同期** (ホーム一覧) / メモ一覧に戻る (詳細画面) |
 
 ### 2. アプリの終了方法（スマートグラスでの操作）
 * **方法 1（標準・推奨）: ホーム（メモ一覧）画面でダブルタップ（2回タップ）** します。Even OS のシステム終了確認ダイアログ（「終了しますか？」）が表示されるので、確定してアプリを終了します。
