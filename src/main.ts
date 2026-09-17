@@ -162,6 +162,17 @@ class App {
     } else if (normalizedType === OsEventTypeList.LONG_PRESS_EVENT) {
       isLongPress = true;
     } else if (
+      normalizedType === OsEventTypeList.SYSTEM_EXIT_EVENT ||
+      normalizedType === OsEventTypeList.ABNORMAL_EXIT_EVENT
+    ) {
+      console.log(`[App] System exit event received (${normalizedType}) -> performing post-confirmation cleanup`);
+      if (this.singleTapTimer !== null) {
+        clearTimeout(this.singleTapTimer);
+        this.singleTapTimer = null;
+      }
+      await evenBridge.shutDownPageContainer(0);
+      return;
+    } else if (
       normalizedType === OsEventTypeList.CLICK_EVENT ||
       normalizedType === undefined ||
       normalizedType === null
@@ -331,7 +342,7 @@ class App {
   }
 
   /**
-   * ダブルタップの処理 (一覧に戻る / メモ再同期)
+   * ダブルタップの処理 (詳細モードなら一覧に戻る / ホーム画面ならシステム終了確認ダイアログを表示)
    */
   private async handleDoubleTap() {
     console.log("[App] Executing double tap action");
@@ -342,8 +353,11 @@ class App {
       this.updatePreviewUI();
       this.renderNotesList();
     } else {
-      this.showToast("🔄 Google Keepと再同期中...");
-      await this.syncNotes(true);
+      // ホームページ（一覧画面）でのダブルタップ:
+      // Even Hub審査必須要件: システム終了確認ダイアログを表示するため shutDownPageContainer(1) を呼び出す
+      console.log("[App] Double-tap on homepage -> calling shutDownPageContainer(1) for system exit confirmation dialog");
+      this.showToast("🚪 終了確認ダイアログを表示中...");
+      await evenBridge.shutDownPageContainer(1);
     }
   }
 

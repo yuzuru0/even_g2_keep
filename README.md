@@ -189,13 +189,12 @@ If you are running the server on your own server or home PC using `docker-compos
 | :--- | :--- |
 | **Single Tap** | Open note detail / Toggle checklist item (checked / unchecked) |
 | **Swipe Down / Up** | Scroll page down / up (or select next / previous note) |
-| **Double Tap** | Return to note list / Force instant sync with Google Keep |
+| **Double Tap** | Return to note list (from detail) / **Show exit confirmation dialog** (from home list) |
 | **Long Press** | Toggle Archive filter / Return to list view |
 
 ### 2. How to Exit the App (On G2 Smart Glasses)
-1. **Tap once, then long-press** on the temple touchpad.
-2. The Even OS system menu will appear on your display.
-3. Select **"Close"** (閉じる) to exit the app and return to the home watch face.
+* **Method 1 (Standard): Double-tap on the home note list screen.** This brings up the native system exit confirmation dialog (`"End this feature?"`). Select confirm to safely close the app.
+* **Method 2 (System Menu): Tap once, then long-press** on the temple touchpad to open the Even OS system menu, then select **"Close"** (閉じる).
 
 ---
 ---
@@ -383,13 +382,12 @@ Render.com では、**デプロイ時のフォーム** または **デプロイ�
 | :--- | :--- |
 | **1回タップ (Single Tap)** | メモの詳細を開く / チェックボックスのオン・オフ切替 |
 | **スワイプ 上/下 (Swipe)** | ページ送り・スクロール (または次/前のメモを選択) |
-| **2回タップ (Double Tap)** | メモ一覧に戻る / Google Keep との即時強制再同期 |
+| **2回タップ (Double Tap)** | メモ詳細から一覧に戻る / **ホーム一覧画面でアプリ終了確認ダイアログを表示** |
 | **長押し (Long Press)** | アーカイブ表示の切替 / メモ詳細から一覧画面に戻る |
 
 ### 2. アプリの終了方法（スマートグラスでの操作）
-1. テンプルのタッチパッドを **「ワンタップした後、長押し」** します。
-2. グラス画面上に Even OS のシステムメニューが表示されます。
-3. メニュー内の **「閉じる」** を選択することで、アプリを終了して待受画面（時計）に戻ります。
+* **方法 1（標準・推奨）: ホーム（メモ一覧）画面でダブルタップ（2回タップ）** します。Even OS のシステム終了確認ダイアログ（「終了しますか？」）が表示されるので、確定してアプリを終了します。
+* **方法 2（システムメニュー）: テンプルを「1回タップ後、長押し」** してシステムメニューを表示し、「閉じる」を選択して待受画面に戻ります。
 
 ---
 

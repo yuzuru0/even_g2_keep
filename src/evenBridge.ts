@@ -232,20 +232,32 @@ class EvenBridgeService {
   }
 
   /**
-   * グラス上のページコンテナを閉じて待受画面（時計）に戻る
+   * グラス上のページコンテナの終了を要求 / 終了処理
+   * @param exitMode 1: システム終了確認ダイアログを表示 (ホームページでのダブルタップ時に必須)
+   *                 0: 即時終了 / ユーザー終了選択後のクリーンアップ (post-confirmation cleanup)
    */
-  async closeApp(): Promise<boolean> {
+  async shutDownPageContainer(exitMode: number = 1): Promise<boolean> {
     if (!this.bridge) {
-      console.log("[EvenBridge Mock] Close app / shutDownPageContainer called");
+      console.log(`[EvenBridge Mock] shutDownPageContainer(${exitMode}) called`);
       return false;
     }
     try {
-      this.isPageCreated = false;
-      return await this.bridge.shutDownPageContainer(0);
+      if (exitMode === 0) {
+        this.isPageCreated = false;
+      }
+      return await this.bridge.shutDownPageContainer(exitMode);
     } catch (err) {
-      console.error("[EvenBridge] Error shutting down page container:", err);
+      console.error(`[EvenBridge] Error in shutDownPageContainer(${exitMode}):`, err);
       return false;
     }
+  }
+
+  /**
+   * グラス上のページコンテナを閉じて待受画面（時計）に戻る
+   * (終了確定後の後処理やスマホ側終了ボタン用: shutDownPageContainer(0) を実行)
+   */
+  async closeApp(exitMode: number = 0): Promise<boolean> {
+    return await this.shutDownPageContainer(exitMode);
   }
 
   /**
